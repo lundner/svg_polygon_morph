@@ -1,0 +1,118 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<style>
+			#morph {
+				border: 1px solid #ccc;
+				width: 600px;
+				height: 400px;
+			}
+		</style>
+		<script>
+			window.addEventListener('load', function() {
+
+				var coords = [];
+				var polygons = [];
+				var ns = 'http://www.w3.org/2000/svg';
+				var paper = document.getElementById('morph');
+
+				paper.addEventListener('click', function(evt) {
+					coords.push({
+						x: evt.offsetX,
+						y: evt.offsetY
+					})
+				});
+
+				paper.addEventListener('dblclick', function(evt) {
+					drawPolygon(coords, '#0f0');
+					polygons.push(coords);
+					coords = [];
+				});
+
+				window.addEventListener("keydown", function(evt) {
+					if(evt.keyCode == 13) morph();
+				});
+
+				var maxVertices = function(polygons) {
+					var max = 0;
+					for (var i=0; i<polygons.length; i++) {
+						max = (max < polygons[i].length)?polygons[i].length:max;
+					}
+					return max;
+				}
+
+				var createPath = function(polygon) {
+					var path = '';
+					for(var i=0; i<polygon.length; i++) {
+						p = polygon[i];
+						path+= (i==0)?'M'+p.x+' '+p.y:' L'+p.x+' '+p.y;
+						path+= (i==polygon.length-1)?' Z':'';
+					}
+					return path;
+				}
+
+				var transformPaths = function() {
+					max = maxVertices(polygons);
+					for(var i=0;i<polygons.length; i++) {
+						var p = polygons[i];
+						var k = max - p.length;
+						for(k; k>0; k--) {
+							p.push({
+								x: p[p.length-1].x, 
+								y: p[p.length-1].y
+							});
+						}
+					}
+				}
+
+				var drawPolygon = function(polygon, color) {
+					var p = document.createElementNS(ns, 'path')
+					
+					p.setAttributeNS(null, 'stroke', color);
+					p.setAttributeNS(null, 'fill-opacity', 0);
+					p.setAttributeNS(null, 'd', createPath(polygon));
+
+					paper.appendChild(p);
+				}
+
+				var morph = function() {
+					transformPaths();
+					var values = '';
+					for(var i=0; i<polygons.length; i++) {
+						values += createPath(polygons[i]);
+						if(i<polygons.length-1) values += ';';
+					}
+
+					var p = document.createElementNS(ns, 'path');
+					p.setAttributeNS(null, 'stroke', '#f00');
+					p.setAttributeNS(null, 'fill-opacity', 0);
+					p.setAttributeNS(null, 'd', createPath(polygons[0]));
+
+					var a = document.createElementNS(ns, 'animate');
+					a.setAttributeNS(null, 'attributeName', 'd');
+					a.setAttributeNS(null, 'dur', '5s');
+					a.setAttributeNS(null, 'repeatCount', 'indefinite');
+					a.setAttributeNS(null, 'values', values);
+					a.setAttributeNS(null, 'begin', paper.getCurrentTime());
+
+					p.appendChild(a);
+					paper.appendChild(p);
+				}
+			});
+		</script>
+	</head>
+	<body>
+		<div>
+			<h1>Beispiel für das Morphen von Polygonen in SVG</h1>
+			<ul>
+				<li>Die Polygone werden im markierten Rechteck gezeichnet.</li>
+				<li>Jeder Klick erzeugt einen Eckpunkt des Polygons.</li>
+				<li>Ein Doppelklick beendet das Erstellen eines Polygons.</li>
+				<li>Anschließend kann ein weiteres Polygon gezeichnet werden</li>
+				<li>Mit dem Drücken der Enter-Taste werden die Polygone ineinander umgewandelt.</li>
+			</ul>
+		</div>
+		<svg id="morph" xmlns="http://www.w3.org/2000/svg" version="1.1">
+		</svg>
+	</body>
+</html>
